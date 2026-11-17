@@ -125,18 +125,19 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
-      {!opened && <Scene1Portal onOpen={handleOpen} />}
-      <main aria-hidden={!opened}>
-        <Scene2Debutante />
-        <Scene3Invitation />
-        <Scene4DateTime />
-        <Scene5Location />
-        <SceneGiftHints />
-        <Scene6Rsvp />
-        <Scene7Closing />
-      </main>
-      {opened && (
+      {!opened ? (
+        <Scene1Portal onOpen={handleOpen} />
+      ) : (
         <>
+          <main>
+            <Scene2Debutante />
+            <Scene3Invitation />
+            <Scene4DateTime />
+            <Scene5Location />
+            <SceneGiftHints />
+            <Scene6Rsvp />
+            <Scene7Closing />
+          </main>
           <JourneyGuide />
           <FloatingControls playing={playing} onToggleMusic={toggleMusic} />
         </>

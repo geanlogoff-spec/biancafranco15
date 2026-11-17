@@ -5,3 +5,4 @@ dist
 *.log
 .agents/
 tsconfig.tsbuildinfo
+APRESENTACAO_ENTREGA.md

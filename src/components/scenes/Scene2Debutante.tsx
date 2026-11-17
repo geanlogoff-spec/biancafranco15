@@ -63,10 +63,10 @@ export function Scene2Debutante() {
         {/* Moldura floral com a foto/ilustração */}
         <motion.div
           className="relative my-6"
-          initial={{ opacity: 0, clipPath: reduce ? 'inset(0)' : 'circle(0% at 50% 50%)' }}
-          whileInView={{ opacity: 1, clipPath: 'circle(75% at 50% 50%)' }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 1.8, ease: [0.65, 0, 0.35, 1] }}
+          initial={{ opacity: 0, scale: reduce ? 1 : 0.92, y: reduce ? 0 : 20 }}
+          whileInView={{ opacity: 1, scale: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.05 }}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="relative h-[26rem] w-[19.5rem] overflow-hidden rounded-t-full border-[6px] border-white shadow-[0_30px_70px_-25px_rgb(110_79_153/0.6)] outline outline-1 outline-offset-8 outline-gold sm:h-[32rem] sm:w-[24rem]">
             <img
