@@ -2,14 +2,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowUp,
   Calendar,
-  Check,
   Gift,
   Heart,
   MapPin,
   Menu,
   Music,
   ScrollText,
-  Share2,
   Sparkles,
   UserCheck,
   X,
@@ -33,13 +31,12 @@ const SECTIONS = [
 ];
 
 const btnBase =
-  'flex h-12 w-12 items-center justify-center rounded-full border shadow-[0_8px_24px_-8px_rgb(110_79_153/0.5)] backdrop-blur-md transition active:scale-90';
-const btn = `${btnBase} border-gold/70 bg-white/90 text-plum-deep hover:bg-white`;
-const btnActive = `${btnBase} border-plum bg-plum text-white hover:bg-plum-deep`;
+  'flex h-12 w-12 items-center justify-center rounded-full transition active:scale-90';
+const btn = `${btnBase} ios-glass-pill text-plum-deep hover:brightness-105`;
+const btnActive = `${btnBase} border border-white/60 bg-gradient-to-br from-plum to-[#b393de] text-white shadow-[0_10px_28px_-8px_rgba(110,79,153,0.6)]`;
 
 export function FloatingControls({ playing, onToggleMusic }: Props) {
   const [showTop, setShowTop] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('debutante');
 
@@ -76,25 +73,6 @@ export function FloatingControls({ playing, onToggleMusic }: Props) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     setMenuOpen(false);
-  };
-
-  const share = async () => {
-    const data = {
-      title: `15 anos de ${invitation.debutante.name}`,
-      text: `Você está convidado(a) para os 15 anos de ${invitation.debutante.name}! ✨`,
-      url: window.location.href,
-    };
-    if (navigator.share) {
-      try {
-        await navigator.share(data);
-      } catch {
-        /* usuário cancelou */
-      }
-      return;
-    }
-    await navigator.clipboard.writeText(`${data.text} ${data.url}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2200);
   };
 
   return (
@@ -143,19 +121,6 @@ export function FloatingControls({ playing, onToggleMusic }: Props) {
 
       {/* Pilha lateral de controles */}
       <div className="flex flex-col items-end gap-2.5">
-        <AnimatePresence>
-          {copied && (
-            <motion.span
-              className="rounded-full bg-plum-deep px-4 py-2 font-sans text-xs font-medium text-white shadow-lg"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-            >
-              Link copiado!
-            </motion.span>
-          )}
-        </AnimatePresence>
-
         {invitation.audio.musicUrl && (
           <button className={btn} onClick={onToggleMusic} aria-label={playing ? 'Pausar música' : 'Tocar música'} title="Música">
             {playing ? (
@@ -174,10 +139,6 @@ export function FloatingControls({ playing, onToggleMusic }: Props) {
             )}
           </button>
         )}
-
-        <button className={btn} onClick={share} aria-label="Compartilhar convite" title="Compartilhar">
-          {copied ? <Check size={18} /> : <Share2 size={18} />}
-        </button>
 
         <button
           type="button"

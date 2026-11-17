@@ -315,7 +315,7 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
             className={`admin-tab-item ${tab === 'share' ? 'is-active' : ''}`}
           >
             <Share2 size={16} />
-            <span>Convite &amp; WhatsApp</span>
+            <span>Convite, PDF &amp; WhatsApp</span>
           </button>
         </nav>
 
@@ -529,26 +529,48 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
               </div>
             </section>
 
-            {/* Atalho rápido para a aba Confirmações */}
-            <div className="admin-panel-card flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="font-mono text-[0.66rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
-                  LISTA DE CONVIDADOS // GESTÃO
-                </p>
-                <p className="font-display mt-0.5 text-base font-bold text-[var(--color-text-main)]">
-                  {stats.totalResponses === 0
-                    ? 'Nenhuma resposta registrada ainda'
-                    : `${stats.totalResponses} resposta(s) recebida(s) · ${stats.confirmedResponses} confirmado(s)`}
-                </p>
+            {/* Atalhos rápidos para Confirmações e Exportação do Convite */}
+            <div className="dashboard-grid-2">
+              <div className="admin-panel-card flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="font-mono text-[0.66rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+                    LISTA DE CONVIDADOS // GESTÃO
+                  </p>
+                  <p className="font-display mt-0.5 text-base font-bold text-[var(--color-text-main)]">
+                    {stats.totalResponses === 0
+                      ? 'Nenhuma resposta registrada ainda'
+                      : `${stats.totalResponses} resposta(s) recebida(s) · ${stats.confirmedResponses} confirmado(s)`}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTab('rsvps')}
+                  className="inline-flex min-h-[42px] items-center gap-2 rounded-[var(--radius-sm)] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:brightness-105"
+                >
+                  <span>Gerenciar Confirmações</span>
+                  <ArrowRight size={15} />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setTab('rsvps')}
-                className="inline-flex min-h-[42px] items-center gap-2 rounded-[var(--radius-sm)] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:brightness-105"
-              >
-                <span>Gerenciar Confirmações</span>
-                <ArrowRight size={15} />
-              </button>
+
+              <div className="admin-panel-card flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="font-mono text-[0.66rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+                    EXPORTAÇÃO &amp; ENVIO // CARTÃO DIGITAL
+                  </p>
+                  <p className="font-display mt-0.5 text-base font-bold text-[var(--color-text-main)]">
+                    Convite em PDF, Imagem &amp; WhatsApp
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTab('share')}
+                  className="btn-admin-outline bg-white/85"
+                  style={{ minHeight: 42 }}
+                >
+                  <Download size={15} />
+                  <span>Baixar PDF / Imagem</span>
+                </button>
+              </div>
             </div>
           </>
         )}

@@ -125,23 +125,24 @@ export function Scene6Rsvp() {
               ) : (
                 <motion.form key="form" onSubmit={submit} noValidate exit={{ opacity: 0, y: -10 }} className="space-y-5">
                   <div>
-                    <label htmlFor="name" className="mb-1.5 block font-sans text-xs uppercase tracking-[0.2em] text-plum">
+                    <label htmlFor="name" className="mb-1.5 block font-sans text-xs font-semibold uppercase tracking-[0.2em] text-plum-deep">
                       Nome completo
                     </label>
                     <input
                       id="name"
                       className="input-magic"
                       autoComplete="name"
+                      placeholder="Ex.: Maria Oliveira"
                       maxLength={120}
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       aria-invalid={!!errors.name}
                     />
-                    {errors.name && <p className="mt-1 text-sm text-rose-500">{errors.name}</p>}
+                    {errors.name && <p className="mt-1 text-sm font-medium text-rose-600">{errors.name}</p>}
                   </div>
 
                   <div>
-                    <label htmlFor="phone" className="mb-1.5 block font-sans text-xs uppercase tracking-[0.2em] text-plum">
+                    <label htmlFor="phone" className="mb-1.5 block font-sans text-xs font-semibold uppercase tracking-[0.2em] text-plum-deep">
                       Telefone / WhatsApp
                     </label>
                     <input
@@ -155,11 +156,13 @@ export function Scene6Rsvp() {
                       onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '').slice(0, 11) })}
                       aria-invalid={!!errors.phone}
                     />
-                    {errors.phone && <p className="mt-1 text-sm text-rose-500">{errors.phone}</p>}
+                    {errors.phone && <p className="mt-1 text-sm font-medium text-rose-600">{errors.phone}</p>}
                   </div>
 
                   <fieldset>
-                    <legend className="mb-2 font-sans text-xs uppercase tracking-[0.2em] text-plum">Você poderá comparecer?</legend>
+                    <legend className="mb-2 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-plum-deep">
+                      Você poderá comparecer?
+                    </legend>
                     <div className="grid gap-3">
                       {[
                         { v: true, label: 'SIM, ESTAREI PRESENTE', Icon: Check },
@@ -170,15 +173,17 @@ export function Scene6Rsvp() {
                           key={label}
                           whileTap={{ scale: 0.97 }}
                           onClick={() => setForm({ ...form, attending: v, companions: v ? form.companions : 0 })}
-                          className={`flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-left font-sans text-sm tracking-wider transition ${
+                          className={`flex items-center gap-3 rounded-2xl border-[1.5px] px-4 py-3.5 text-left font-sans text-sm font-medium tracking-wider transition ${
                             form.attending === v
-                              ? 'border-plum bg-gradient-to-r from-lavender to-white text-plum-deep shadow-md'
-                              : 'border-lilac/70 bg-white/60 text-plum'
+                              ? 'border-plum bg-gradient-to-r from-lavender via-white to-white text-plum-deep shadow-md'
+                              : 'border-plum/45 bg-white/90 text-plum-deep/85 hover:border-plum/75 hover:bg-white'
                           }`}
                           aria-pressed={form.attending === v}
                         >
                           <span
-                            className={`flex h-6 w-6 items-center justify-center rounded-full ${form.attending === v ? 'bg-plum text-white' : 'bg-lavender text-plum'}`}
+                            className={`flex h-6 w-6 items-center justify-center rounded-full ${
+                              form.attending === v ? 'bg-plum text-white' : 'bg-lavender text-plum-deep'
+                            }`}
                           >
                             <Icon size={14} />
                           </span>

@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowUp, ShieldCheck } from 'lucide-react';
+import { ArrowUp, Lock } from 'lucide-react';
 import { invitation } from '../../config/invitation.config';
 import { BloomingRose, FlowerCluster } from '../decorative/BloomingRose';
 import { ButterflySwarm } from '../decorative/Butterfly';
@@ -43,7 +43,7 @@ export function Scene7Closing() {
             <BloomingRose size={54} color="lilac" delay={0.2} />
             <BloomingRose size={44} color="white" delay={0.4} />
           </div>
-          <div className="mt-4 flex flex-col items-center gap-4">
+          <div className="mt-4 flex flex-col items-center">
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })}
               className="btn-magic inline-flex min-h-[46px] items-center gap-2 rounded-full border border-gold bg-white/90 px-7 py-3.5 font-sans text-xs font-semibold uppercase tracking-[0.22em] text-plum-deep shadow-lg transition hover:bg-white"
@@ -53,10 +53,10 @@ export function Scene7Closing() {
 
             <a
               href="#admin"
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-plum/35 bg-white/95 px-6 py-3 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-plum-deep shadow-[0_8px_24px_-8px_rgb(110_79_153/0.4)] transition hover:border-plum hover:bg-white hover:shadow-[0_12px_28px_-8px_rgb(110_79_153/0.55)] active:scale-95"
+              className="mt-8 inline-flex items-center gap-1.5 rounded-full border border-plum/20 bg-white/50 px-4 py-1.5 font-sans text-[0.68rem] font-medium uppercase tracking-[0.2em] text-plum/75 backdrop-blur-sm transition hover:border-plum/40 hover:bg-white/80 hover:text-plum-deep"
             >
-              <ShieldCheck size={16} className="text-plum" />
-              <span>Acesso Administrativo</span>
+              <Lock size={12} />
+              <span>Acesso Admin</span>
             </a>
           </div>
         </Reveal>

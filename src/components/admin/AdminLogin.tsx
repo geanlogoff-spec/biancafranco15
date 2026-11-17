@@ -60,7 +60,7 @@ export function AdminLogin({ onSuccess, onBack }: Props) {
           />
 
           <div className="admin-login-card relative overflow-hidden !p-3 sm:!p-4">
-            <OrnateFrame className="rounded-[var(--radius-md)] border border-gold/55 bg-white/55 px-5 py-7 sm:px-7 sm:py-8">
+            <OrnateFrame className="rounded-[20px] border border-white/75 bg-white/35 px-5 py-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-md sm:px-7 sm:py-8">
               <div className="mb-6 text-center">
                 <CrownCrest className="mb-2" />
 

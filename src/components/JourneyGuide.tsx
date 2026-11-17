@@ -61,9 +61,9 @@ export function JourneyGuide() {
         />
       </div>
 
-      {/* Pílula discreta indicando a etapa atual */}
+      {/* Pílula discreta estilo Dynamic Island em vidro fosco */}
       <div className="pointer-events-none fixed inset-x-0 top-3.5 z-30 flex justify-center px-4">
-        <div className="rounded-full border border-gold/55 bg-white/85 px-4 py-1.5 font-sans text-[0.7rem] font-medium tracking-[0.14em] text-plum-deep shadow-sm backdrop-blur-md tabular-nums">
+        <div className="ios-glass-pill rounded-full px-4 py-1.5 font-sans text-[0.7rem] font-medium tracking-[0.14em] text-plum-deep tabular-nums">
           <span className="font-semibold text-plum">
             {activeIndex + 1} de {STEPS.length}
           </span>
@@ -72,7 +72,7 @@ export function JourneyGuide() {
         </div>
       </div>
 
-      {/* Botão guiado para avançar até o final sem precisar adivinhar a rolagem */}
+      {/* Botão guiado em cápsula Liquid Glass */}
       <AnimatePresence>
         {nextStep && (
           <motion.div
@@ -87,10 +87,10 @@ export function JourneyGuide() {
             <button
               type="button"
               onClick={handleNext}
-              className={`pointer-events-auto inline-flex min-h-[46px] max-w-full items-center gap-2 rounded-full border px-5 py-2.5 font-sans text-xs font-semibold tracking-wide shadow-[0_10px_28px_-8px_rgb(110_79_153/0.45)] backdrop-blur-md transition active:scale-95 ${
+              className={`pointer-events-auto inline-flex min-h-[46px] max-w-full items-center gap-2 rounded-full px-5 py-2.5 font-sans text-xs font-semibold tracking-wide transition active:scale-95 ${
                 isNextRsvp
-                  ? 'border-gold bg-gradient-to-r from-plum to-[#b393de] text-white'
-                  : 'border-gold/75 bg-white/92 text-plum-deep hover:bg-white'
+                  ? 'border border-white/60 bg-gradient-to-r from-plum/90 to-[#b393de]/90 text-white shadow-[0_14px_32px_-8px_rgba(110,79,153,0.65)] backdrop-blur-xl'
+                  : 'ios-glass-pill text-plum-deep hover:brightness-105'
               }`}
             >
               <span className="truncate">

@@ -56,38 +56,41 @@ export function PaperDeckled({
         </defs>
       </svg>
 
-      {/* Folha traseira de papel lavanda inclinada para dar profundidade física */}
+      {/* Folha traseira em vidro lavanda translúcido estilo iOS */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-1 -rotate-2 rounded-sm border border-gold/50 bg-gradient-to-br from-[#f2e9fc] via-[#e9ddfb] to-[#dfd0f7] shadow-[0_22px_50px_-16px_rgba(110,79,153,0.45)]"
+        className="pointer-events-none absolute inset-1 -rotate-2 rounded-sm border border-white/75 bg-gradient-to-br from-white/50 via-[#e9ddfb]/55 to-[#d4bcf5]/55 shadow-[0_24px_54px_-16px_rgba(88,56,138,0.34)] backdrop-blur-xl"
       />
 
       {/* Wrapper com drop-shadow que acompanha exatamente a borda irregular do recorte */}
-      <div className="relative drop-shadow-[0_24px_48px_rgba(110,79,153,0.34)]">
+      <div className="relative drop-shadow-[0_26px_52px_rgba(88,56,138,0.28)]">
         <div
           style={{
             clipPath: `url(#${clipId})`,
-            background: 'linear-gradient(155deg, #fffefb 0%, #fcf8ff 52%, #f4ebfc 100%)',
+            background:
+              'linear-gradient(145deg, rgba(255,255,255,0.72) 0%, rgba(252,248,255,0.52) 52%, rgba(240,229,254,0.58) 100%)',
+            backdropFilter: 'blur(26px) saturate(185%) brightness(1.03)',
+            WebkitBackdropFilter: 'blur(26px) saturate(185%) brightness(1.03)',
           }}
           className="relative px-5 py-7 sm:px-7 sm:py-9"
         >
           {/* Textura suave de fibra de papel algodão */}
           <svg
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.04] mix-blend-multiply"
+            className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.03] mix-blend-multiply"
           >
             <rect width="100%" height="100%" filter={`url(#${grainId})`} />
           </svg>
 
-          {/* Iluminação quente nas bordas do papel */}
+          {/* Reflexo especular estilo iOS Liquid Glass nas bordas do recorte */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 shadow-[inset_0_0_48px_rgba(216,197,162,0.28)]"
+            className="pointer-events-none absolute inset-0 shadow-[inset_0_2px_2px_rgba(255,255,255,0.95),inset_0_0_42px_rgba(216,197,162,0.2)]"
           />
 
-          {/* Moldura interna dupla em baixo-relevo dourado */}
-          <div className="relative border border-gold/65 p-1.5">
-            <OrnateFrame className="border border-gold/40 bg-white/45 px-5 py-9 text-center sm:px-8 sm:py-11">
+          {/* Moldura interna dupla em vidro fosco + dourado */}
+          <div className="relative border border-white/75 bg-white/25 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+            <OrnateFrame className="border border-gold/55 bg-white/35 px-5 py-9 text-center backdrop-blur-md sm:px-8 sm:py-11">
               {children}
             </OrnateFrame>
           </div>
