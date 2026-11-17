@@ -1,0 +1,214 @@
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  ArrowUp,
+  Calendar,
+  Check,
+  Gift,
+  Heart,
+  MapPin,
+  Menu,
+  Music,
+  ScrollText,
+  Share2,
+  Sparkles,
+  UserCheck,
+  X,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { invitation } from '../config/invitation.config';
+
+interface Props {
+  playing: boolean;
+  onToggleMusic: () => void;
+}
+
+const SECTIONS = [
+  { id: 'debutante', label: 'Debutante', Icon: Sparkles },
+  { id: 'convite', label: 'O Convite', Icon: ScrollText },
+  { id: 'data', label: 'Data e Horário', Icon: Calendar },
+  { id: 'local', label: 'Local da Festa', Icon: MapPin },
+  { id: 'presentes', label: 'Dicas de Presentes', Icon: Gift },
+  { id: 'rsvp', label: 'Confirmar Presença', Icon: UserCheck },
+  { id: 'fim', label: 'Encerramento', Icon: Heart },
+];
+
+const btnBase =
+  'flex h-12 w-12 items-center justify-center rounded-full border shadow-[0_8px_24px_-8px_rgb(110_79_153/0.5)] backdrop-blur-md transition active:scale-90';
+const btn = `${btnBase} border-gold/70 bg-white/90 text-plum-deep hover:bg-white`;
+const btnActive = `${btnBase} border-plum bg-plum text-white hover:bg-plum-deep`;
+
+export function FloatingControls({ playing, onToggleMusic }: Props) {
+  const [showTop, setShowTop] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('debutante');
+
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > window.innerHeight * 0.5);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const elements = SECTIONS.map((s) => document.getElementById(s.id)).filter(Boolean) as HTMLElement[];
+    if (!elements.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible?.target?.id) {
+          setActiveSection(visible.target.id);
+        }
+      },
+      { threshold: [0.25, 0.5, 0.75] },
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  const navigateTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    setMenuOpen(false);
+  };
+
+  const share = async () => {
+    const data = {
+      title: `15 anos de ${invitation.debutante.name}`,
+      text: `Você está convidado(a) para os 15 anos de ${invitation.debutante.name}! ✨`,
+      url: window.location.href,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(data);
+      } catch {
+        /* usuário cancelou */
+      }
+      return;
+    }
+    await navigator.clipboard.writeText(`${data.text} ${data.url}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2200);
+  };
+
+  return (
+    <div
+      className="fixed bottom-5 right-4 z-40 flex items-end gap-3"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      {/* Submenu lateral das seções */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.nav
+            aria-label="Navegação das seções do convite"
+            initial={{ opacity: 0, x: 16, scale: 0.94 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 16, scale: 0.94 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="glass-card w-56 rounded-2xl p-2.5 shadow-2xl"
+          >
+            <p className="mb-1.5 border-b border-gold/40 px-2.5 pb-1.5 font-sans text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-plum">
+              Ir para seção
+            </p>
+            <ul className="space-y-1">
+              {SECTIONS.map(({ id, label, Icon }) => {
+                const isActive = activeSection === id;
+                return (
+                  <li key={id}>
+                    <button
+                      type="button"
+                      onClick={() => navigateTo(id)}
+                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left font-sans text-xs font-medium transition ${
+                        isActive
+                          ? 'bg-gradient-to-r from-plum to-[#b393de] text-white shadow-sm'
+                          : 'text-plum-deep hover:bg-lavender/70'
+                      }`}
+                    >
+                      <Icon size={14} className="shrink-0" />
+                      <span className="truncate">{label}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </motion.nav>
+        )}
+      </AnimatePresence>
+
+      {/* Pilha lateral de controles */}
+      <div className="flex flex-col items-end gap-2.5">
+        <AnimatePresence>
+          {copied && (
+            <motion.span
+              className="rounded-full bg-plum-deep px-4 py-2 font-sans text-xs font-medium text-white shadow-lg"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+            >
+              Link copiado!
+            </motion.span>
+          )}
+        </AnimatePresence>
+
+        {invitation.audio.musicUrl && (
+          <button className={btn} onClick={onToggleMusic} aria-label={playing ? 'Pausar música' : 'Tocar música'} title="Música">
+            {playing ? (
+              <span className="flex h-4 items-end gap-[3px]">
+                {[0, 1, 2].map((i) => (
+                  <motion.span
+                    key={i}
+                    className="w-[3px] rounded bg-plum"
+                    animate={{ height: ['30%', '100%', '45%', '80%', '30%'] }}
+                    transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.18 }}
+                  />
+                ))}
+              </span>
+            ) : (
+              <Music size={18} />
+            )}
+          </button>
+        )}
+
+        <button className={btn} onClick={share} aria-label="Compartilhar convite" title="Compartilhar">
+          {copied ? <Check size={18} /> : <Share2 size={18} />}
+        </button>
+
+        <button
+          type="button"
+          className={menuOpen ? btnActive : btn}
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-expanded={menuOpen}
+          aria-label={menuOpen ? 'Fechar menu das seções' : 'Abrir menu das seções'}
+          title="Seções do convite"
+        >
+          {menuOpen ? <X size={18} /> : <Menu size={18} />}
+        </button>
+
+        <AnimatePresence>
+          {showTop && (
+            <motion.button
+              className={btn}
+              onClick={() => {
+                setMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              aria-label="Voltar ao topo"
+              title="Voltar ao topo"
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.6 }}
+            >
+              <ArrowUp size={18} />
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
