@@ -16,8 +16,8 @@ function HandwrittenName({ text }: { text: string }) {
           key={i}
           aria-hidden
           className="inline-block"
-          initial={{ opacity: 0, y: reduce ? 0 : 14, filter: reduce ? 'none' : 'blur(4px)' }}
-          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          initial={{ opacity: 0, y: reduce ? 0 : 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.3 + i * 0.09, duration: 0.6, ease: 'easeOut' }}
         >

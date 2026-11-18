@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { BloomingRose, FlowerCluster } from '../decorative/BloomingRose';
 import { Sparkles } from '../decorative/Sparkles';
 
@@ -167,8 +167,56 @@ function BotanicalVine({ className = '', flip = false }: { className?: string; f
   );
 }
 
-export function EnchantedLoginGarden() {
-  const reduce = useReducedMotion();
+/** Borboleta decorativa parada (usada no fundo estático do painel admin) */
+function StaticButterfly({
+  size,
+  wingA,
+  wingB,
+  rotate,
+  className,
+  gid,
+}: {
+  size: number;
+  wingA: string;
+  wingB: string;
+  rotate: number;
+  className: string;
+  gid: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      width={size}
+      height={size}
+      className={`absolute opacity-80 drop-shadow-[0_6px_10px_rgba(110,79,153,0.18)] ${className}`}
+      style={{ transform: `rotate(${rotate}deg)`, overflow: 'visible' }}
+    >
+      <defs>
+        <radialGradient id={gid} cx="30%" cy="40%" r="80%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+          <stop offset="48%" stopColor={wingA} />
+          <stop offset="100%" stopColor={wingB} />
+        </radialGradient>
+      </defs>
+      <path d="M32 30 C 18 6, 2 10, 6 26 C 8 34, 20 34, 32 32 Z" fill={`url(#${gid})`} stroke="#d8c5a2" strokeWidth="0.9" />
+      <path d="M32 33 C 20 36, 8 44, 14 52 C 20 58, 28 46, 32 36 Z" fill={`url(#${gid})`} stroke="#d8c5a2" strokeWidth="0.9" opacity="0.92" />
+      <path d="M32 30 C 46 6, 62 10, 58 26 C 56 34, 44 34, 32 32 Z" fill={`url(#${gid})`} stroke="#d8c5a2" strokeWidth="0.9" />
+      <path d="M32 33 C 44 36, 56 44, 50 52 C 44 58, 36 46, 32 36 Z" fill={`url(#${gid})`} stroke="#d8c5a2" strokeWidth="0.9" opacity="0.92" />
+      <circle cx="15" cy="20" r="2" fill="#fff" opacity="0.85" />
+      <circle cx="49" cy="20" r="2" fill="#fff" opacity="0.85" />
+      <ellipse cx="32" cy="34" rx="1.5" ry="8.5" fill="#6e4f99" />
+      <path d="M31 26 Q 27 18 24 16 M33 26 Q 37 18 40 16" stroke="#6e4f99" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+interface GardenProps {
+  /** Fundo parado: sem borboletas voando, sem halo e sem flores brotando (painel admin) */
+  staticMode?: boolean;
+}
+
+export const EnchantedLoginGarden = memo(function EnchantedLoginGarden({ staticMode = false }: GardenProps = {}) {
+  const reduce = useReducedMotion() || staticMode;
   const haloRef = useRef<HTMLDivElement>(null);
   const butterflyRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [blooms, setBlooms] = useState<BloomItem[]>([]);
@@ -305,7 +353,7 @@ export function EnchantedLoginGarden() {
   return (
     <div className="watercolor-deep pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
       {/* Partículas brilhantes de conto de fadas */}
-      <Sparkles count={28} seed={91} />
+      <Sparkles count={staticMode ? 14 : 28} seed={91} />
 
       {/* Halo suave que acompanha as borboletas / ponteiro */}
       {!reduce && (
@@ -338,6 +386,17 @@ export function EnchantedLoginGarden() {
           <SproutingBloom key={b.id} bloom={b} />
         ))}
       </AnimatePresence>
+
+      {/* Borboletas paradas decorando o fundo estático */}
+      {staticMode && (
+        <>
+          <StaticButterfly gid="st-bf-1" size={46} wingA="#c9afe9" wingB="#9875c4" rotate={-18} className="left-[8%] top-[22%]" />
+          <StaticButterfly gid="st-bf-2" size={36} wingA="#f6edff" wingB="#d8c5a2" rotate={14} className="right-[10%] top-[38%]" />
+          <StaticButterfly gid="st-bf-3" size={40} wingA="#e9ddfb" wingB="#c9afe9" rotate={-8} className="left-[18%] bottom-[18%]" />
+          <StaticButterfly gid="st-bf-4" size={32} wingA="#d9c4f3" wingB="#6e4f99" rotate={22} className="right-[22%] bottom-[10%] hidden sm:block" />
+          <StaticButterfly gid="st-bf-5" size={30} wingA="#fff8ec" wingB="#d8c5a2" rotate={-26} className="left-[46%] top-[12%] hidden sm:block" />
+        </>
+      )}
 
       {/* Bando de borboletas seguidoras */}
       {!reduce &&
@@ -405,4 +464,4 @@ export function EnchantedLoginGarden() {
         ))}
     </div>
   );
-}
+});

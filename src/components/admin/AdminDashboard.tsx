@@ -4,6 +4,8 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Database,
   Download,
@@ -13,6 +15,7 @@ import {
   LogOut,
   MessageCircle,
   Plus,
+  Printer,
   RefreshCw,
   Search,
   Share2,
@@ -23,8 +26,9 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { invitation } from '../../config/invitation.config';
+import { printGuestListReport, printOverviewReport } from '../../lib/adminPrintReports';
 import { eventParts, useCountdown } from '../../lib/date';
 import {
   deleteRsvp,
@@ -37,6 +41,7 @@ import {
   type RsvpInput,
   type RsvpRecord,
 } from '../../lib/supabase';
+import { EnchantedLoginGarden } from './EnchantedLoginGarden';
 import { InviteSharePanel } from './InviteSharePanel';
 
 interface Props {
@@ -48,11 +53,43 @@ interface Props {
 type TabMode = 'overview' | 'rsvps' | 'share';
 type FilterMode = 'all' | 'yes' | 'no';
 
+const DATE_TIME_FMT = new Intl.DateTimeFormat('pt-BR', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+});
+
+const SYNC_TIME_FMT = new Intl.DateTimeFormat('pt-BR', {
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+});
+
 function formatDateTime(iso: string): string {
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(new Date(iso));
+  return DATE_TIME_FMT.format(new Date(iso));
+}
+
+/** Subcomponente isolado para evitar que o tick de 1s re-renderize todo o painel */
+function AdminCountdownDigits() {
+  const countdown = useCountdown();
+  return (
+    <div className="countdown-digits-grid">
+      {[
+        { val: countdown.days, label: 'DIAS' },
+        { val: countdown.hours, label: 'HORAS' },
+        { val: countdown.minutes, label: 'MIN' },
+        { val: countdown.seconds, label: 'SEG' },
+      ].map((cell) => (
+        <div key={cell.label} className="countdown-digit-cell min-w-[66px]">
+          <span className="font-mono block text-[1.6rem] font-bold leading-none text-white">
+            {String(cell.val).padStart(2, '0')}
+          </span>
+          <span className="font-mono mt-1 block text-[0.65rem] uppercase tracking-[0.1em] text-white/75">
+            {cell.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function escapeCsvCell(value: string | number): string {
@@ -67,7 +104,6 @@ function toWhatsAppUrl(phoneDigits: string): string {
 }
 
 export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props) {
-  const countdown = useCountdown();
   const [tab, setTab] = useState<TabMode>('overview');
   const [rsvps, setRsvps] = useState<RsvpRecord[]>([]);
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
@@ -75,7 +111,13 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [filter, setFilter] = useState<FilterMode>('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false,
+  );
   const [linkCopied, setLinkCopied] = useState(false);
 
   // Modal de exclusão (sempre centralizado)
@@ -97,13 +139,7 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
       const { records, latencyMs: ms } = await fetchRsvpsWithLatency();
       setRsvps(records);
       setLatencyMs(ms);
-      setLastSyncAt(
-        new Intl.DateTimeFormat('pt-BR', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        }).format(new Date()),
-      );
+      setLastSyncAt(SYNC_TIME_FMT.format(new Date()));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar confirmações.');
     } finally {
@@ -114,6 +150,15 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
   useEffect(() => {
     loadRsvps();
   }, [loadRsvps]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 768px)');
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   const stats = useMemo(() => {
     const confirmedList = rsvps.filter((r) => r.attending);
@@ -131,7 +176,7 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
   }, [rsvps]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = deferredSearch.trim().toLowerCase();
     const digitsQuery = q.replace(/\D/g, '');
     return rsvps.filter((item) => {
       if (filter === 'yes' && !item.attending) return false;
@@ -141,7 +186,33 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
       const matchesPhone = digitsQuery ? item.phone.includes(digitsQuery) : false;
       return matchesName || matchesPhone;
     });
-  }, [rsvps, filter, search]);
+  }, [rsvps, filter, deferredSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [deferredSearch, filter, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+
+  const paginated = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, safePage, pageSize]);
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: Array<number | 'ellipsis'> = [1];
+    const start = Math.max(2, safePage - 1);
+    const end = Math.min(totalPages - 1, safePage + 1);
+    if (start > 2) pages.push('ellipsis');
+    for (let p = start; p <= end; p++) pages.push(p);
+    if (end < totalPages - 1) pages.push('ellipsis');
+    pages.push(totalPages);
+    return pages;
+  }, [safePage, totalPages]);
 
   const handleCopyInviteLink = async () => {
     const url = `${window.location.origin}/`;
@@ -166,6 +237,33 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
     link.download = `confirmacoes-${invitation.debutante.name.toLowerCase().replace(/\s+/g, '-')}.csv`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handlePrintOverview = () => {
+    printOverviewReport({
+      records: rsvps,
+      stats,
+      latencyMs,
+      lastSyncAt,
+      adminEmail,
+    });
+  };
+
+  const handlePrintGuestList = (respectSearchAndFilter = true) => {
+    if (!respectSearchAndFilter) {
+      printGuestListReport({ records: rsvps, filter: 'all', search: '' });
+      return;
+    }
+    const q = search.trim().toLowerCase();
+    const digitsQuery = q.replace(/\D/g, '');
+    const searchMatched = q
+      ? rsvps.filter((item) => {
+          const matchesName = item.name.toLowerCase().includes(q);
+          const matchesPhone = digitsQuery ? item.phone.includes(digitsQuery) : false;
+          return matchesName || matchesPhone;
+        })
+      : rsvps;
+    printGuestListReport({ records: searchMatched, filter, search });
   };
 
   const handleConfirmDelete = async () => {
@@ -235,6 +333,9 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
 
   return (
     <div className="admin-page-shell pb-14">
+      {/* Fundo estático com flores e borboletas (mesmo visual da tela de login, sem animação de voo) */}
+      <EnchantedLoginGarden staticMode />
+
       {/* 6.1 Top Navbar Sticky */}
       <div className="admin-navbar-wrap">
         <header className="admin-navbar">
@@ -340,33 +441,28 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <div className="countdown-digits-grid">
-                    {[
-                      { val: countdown.days, label: 'DIAS' },
-                      { val: countdown.hours, label: 'HORAS' },
-                      { val: countdown.minutes, label: 'MIN' },
-                      { val: countdown.seconds, label: 'SEG' },
-                    ].map((cell) => (
-                      <div key={cell.label} className="countdown-digit-cell min-w-[66px]">
-                        <span className="font-mono block text-[1.6rem] font-bold leading-none text-white">
-                          {String(cell.val).padStart(2, '0')}
-                        </span>
-                        <span className="font-mono mt-1 block text-[0.65rem] uppercase tracking-[0.1em] text-white/75">
-                          {cell.label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  <AdminCountdownDigits />
 
-                  <button
-                    type="button"
-                    onClick={handleExportCsv}
-                    disabled={filtered.length === 0}
-                    className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-white/30 bg-white/15 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur-md transition hover:bg-white/25 disabled:opacity-50"
-                  >
-                    <Download size={15} />
-                    <span>Exportar CSV</span>
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handlePrintOverview}
+                      className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-white/35 bg-white/20 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur-md transition hover:bg-white/30"
+                    >
+                      <Printer size={15} />
+                      <span>Imprimir / PDF Visão Geral</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleExportCsv}
+                      disabled={filtered.length === 0}
+                      className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-white/30 bg-white/15 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur-md transition hover:bg-white/25 disabled:opacity-50"
+                    >
+                      <Download size={15} />
+                      <span>Exportar CSV</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -542,14 +638,27 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
                       : `${stats.totalResponses} resposta(s) recebida(s) · ${stats.confirmedResponses} confirmado(s)`}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setTab('rsvps')}
-                  className="inline-flex min-h-[42px] items-center gap-2 rounded-[var(--radius-sm)] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:brightness-105"
-                >
-                  <span>Gerenciar Confirmações</span>
-                  <ArrowRight size={15} />
-                </button>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => handlePrintGuestList(false)}
+                    disabled={rsvps.length === 0}
+                    className="btn-admin-outline bg-white/85 disabled:opacity-50"
+                    style={{ minHeight: 42 }}
+                  >
+                    <Printer size={15} />
+                    <span>Imprimir Lista (PDF)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTab('rsvps')}
+                    className="inline-flex min-h-[42px] items-center gap-2 rounded-[var(--radius-sm)] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:brightness-105"
+                  >
+                    <span>Gerenciar Confirmações</span>
+                    <ArrowRight size={15} />
+                  </button>
+                </div>
               </div>
 
               <div className="admin-panel-card flex flex-wrap items-center justify-between gap-4">
@@ -625,6 +734,17 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
                     <option value="no">Não poderão ir ({stats.declinedCount})</option>
                   </select>
 
+                  <button
+                    type="button"
+                    onClick={() => handlePrintGuestList(true)}
+                    disabled={filtered.length === 0}
+                    className="btn-admin-outline"
+                    style={{ minHeight: 42 }}
+                  >
+                    <Printer size={14} />
+                    <span>Imprimir / PDF</span>
+                  </button>
+
                   <button type="button" onClick={handleExportCsv} disabled={filtered.length === 0} className="btn-admin-outline" style={{ minHeight: 42 }}>
                     <Download size={14} />
                     <span>CSV</span>
@@ -663,123 +783,196 @@ export function AdminDashboard({ adminEmail, onSignedOut, onGoToInvite }: Props)
                 </div>
               ) : (
                 <>
-                  {/* Tabela Desktop */}
-                  <div className="admin-table-container">
-                    <table className="admin-data-table">
-                      <thead>
-                        <tr>
-                          <th>Convidado(a)</th>
-                          <th>WhatsApp</th>
-                          <th>Status</th>
-                          <th>Recebido em</th>
-                          <th className="text-right">Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filtered.map((item) => (
-                          <tr key={item.id}>
-                            <td className="font-semibold">{item.name}</td>
-                            <td>
-                              <a
-                                href={toWhatsAppUrl(item.phone)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-mono inline-flex items-center gap-1.5 rounded-full bg-[#eefce8] px-3 py-1 text-xs font-medium text-[#1b6e38] transition hover:brightness-95"
-                              >
-                                <MessageCircle size={13} />
-                                {formatPhone(item.phone)}
-                              </a>
-                            </td>
-                            <td>
-                              {item.attending ? (
-                                <span className="status-pill is-confirmed">
-                                  <CheckCircle2 size={13} /> Confirmado
-                                </span>
-                              ) : (
-                                <span className="status-pill is-declined">
-                                  <XCircle size={13} /> Não irá
-                                </span>
-                              )}
-                            </td>
-                            <td className="font-mono text-xs text-[var(--color-text-muted)]">{formatDateTime(item.created_at)}</td>
-                            <td>
-                              <div className="flex justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => openEditModal(item)}
-                                  className="btn-table-action"
-                                  aria-label={`Editar ${item.name}`}
-                                  title="Editar"
-                                >
-                                  <Edit3 size={14} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setDeleteTarget(item)}
-                                  className="btn-table-action is-danger"
-                                  aria-label={`Excluir ${item.name}`}
-                                  title="Excluir"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            </td>
+                  {/* Renderiza somente a visão ativa (Desktop OU Mobile) e apenas os itens da página atual */}
+                  {!isMobile ? (
+                    <div className="admin-table-container">
+                      <table className="admin-data-table">
+                        <thead>
+                          <tr>
+                            <th>Convidado(a)</th>
+                            <th>WhatsApp</th>
+                            <th>Status</th>
+                            <th>Recebido em</th>
+                            <th className="text-right">Ações</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Cartões Mobile (ativado automaticamente em <= 768px) */}
-                  <div className="mobile-cards-list">
-                    {filtered.map((item) => (
-                      <div key={item.id} className="mobile-data-card space-y-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h3 className="font-display text-base font-bold text-[var(--color-text-main)]">{item.name}</h3>
-                            <p className="mobile-card-meta-item mt-0.5">{formatDateTime(item.created_at)}</p>
+                        </thead>
+                        <tbody>
+                          {paginated.map((item) => (
+                            <tr key={item.id}>
+                              <td className="font-semibold">{item.name}</td>
+                              <td>
+                                <a
+                                  href={toWhatsAppUrl(item.phone)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-mono inline-flex items-center gap-1.5 rounded-full bg-[#eefce8] px-3 py-1 text-xs font-medium text-[#1b6e38] transition hover:brightness-95"
+                                >
+                                  <MessageCircle size={13} />
+                                  {formatPhone(item.phone)}
+                                </a>
+                              </td>
+                              <td>
+                                {item.attending ? (
+                                  <span className="status-pill is-confirmed">
+                                    <CheckCircle2 size={13} /> Confirmado
+                                  </span>
+                                ) : (
+                                  <span className="status-pill is-declined">
+                                    <XCircle size={13} /> Não irá
+                                  </span>
+                                )}
+                              </td>
+                              <td className="font-mono text-xs text-[var(--color-text-muted)]">{formatDateTime(item.created_at)}</td>
+                              <td>
+                                <div className="flex justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditModal(item)}
+                                    className="btn-table-action"
+                                    aria-label={`Editar ${item.name}`}
+                                    title="Editar"
+                                  >
+                                    <Edit3 size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeleteTarget(item)}
+                                    className="btn-table-action is-danger"
+                                    aria-label={`Excluir ${item.name}`}
+                                    title="Excluir"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="mobile-cards-list">
+                      {paginated.map((item) => (
+                        <div key={item.id} className="mobile-data-card space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h3 className="font-display text-base font-bold text-[var(--color-text-main)]">{item.name}</h3>
+                              <p className="mobile-card-meta-item mt-0.5">{formatDateTime(item.created_at)}</p>
+                            </div>
+                            {item.attending ? (
+                              <span className="status-pill is-confirmed">
+                                <CheckCircle2 size={12} /> Confirmado
+                              </span>
+                            ) : (
+                              <span className="status-pill is-declined">
+                                <XCircle size={12} /> Não irá
+                              </span>
+                            )}
                           </div>
-                          {item.attending ? (
-                            <span className="status-pill is-confirmed">
-                              <CheckCircle2 size={12} /> Confirmado
+
+                          <div className="border-t border-[var(--color-card-border)] pt-2.5">
+                            <span className="mobile-card-meta-item">{formatPhone(item.phone)}</span>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2 pt-1">
+                            <a
+                              href={toWhatsAppUrl(item.phone)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mobile-card-action-btn flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] bg-[#eefce8] px-3 text-xs font-semibold text-[#1b6e38]"
+                            >
+                              <MessageCircle size={15} /> Whats
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(item)}
+                              className="mobile-card-action-btn flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-card-border)] bg-white px-3 text-xs font-semibold text-[var(--color-text-main)]"
+                            >
+                              <Edit3 size={15} /> Editar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget(item)}
+                              className="mobile-card-action-btn flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-700"
+                            >
+                              <Trash2 size={15} /> Excluir
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Barra de Paginação */}
+                  <div className="mt-5 flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--color-card-border)] bg-white/70 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--color-text-muted)]">
+                      <span className="font-mono">
+                        Mostrando{' '}
+                        <strong className="text-[var(--color-text-main)]">
+                          {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filtered.length)}
+                        </strong>{' '}
+                        de <strong className="text-[var(--color-text-main)]">{filtered.length.toLocaleString('pt-BR')}</strong>
+                      </span>
+
+                      <select
+                        className="rounded-lg border border-[var(--color-card-border)] bg-white/90 px-2.5 py-1.5 font-mono text-xs font-medium text-[var(--color-text-main)] outline-none"
+                        value={pageSize}
+                        onChange={(e) => setPageSize(Number(e.target.value))}
+                        aria-label="Itens por página"
+                      >
+                        <option value={25}>25 / pág</option>
+                        <option value={50}>50 / pág</option>
+                        <option value={100}>100 / pág</option>
+                      </select>
+                    </div>
+
+                    {totalPages > 1 && (
+                      <div className="flex flex-wrap items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                          disabled={safePage <= 1}
+                          className="inline-flex min-h-[38px] items-center gap-1 rounded-lg border border-[var(--color-card-border)] bg-white/90 px-2.5 text-xs font-semibold text-[var(--color-text-main)] transition hover:bg-[var(--color-bg-alt)] disabled:opacity-45"
+                          aria-label="Página anterior"
+                        >
+                          <ChevronLeft size={14} />
+                          <span className="hidden sm:inline">Anterior</span>
+                        </button>
+
+                        {pageNumbers.map((item, idx) =>
+                          item === 'ellipsis' ? (
+                            <span key={`e-${idx}`} className="px-1.5 font-mono text-xs text-[var(--color-text-muted)]">
+                              …
                             </span>
                           ) : (
-                            <span className="status-pill is-declined">
-                              <XCircle size={12} /> Não irá
-                            </span>
-                          )}
-                        </div>
+                            <button
+                              key={item}
+                              type="button"
+                              onClick={() => setPage(item)}
+                              className={`min-h-[38px] min-w-[38px] rounded-lg px-2.5 font-mono text-xs font-semibold transition ${
+                                item === safePage
+                                  ? 'bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] text-white shadow-sm'
+                                  : 'border border-[var(--color-card-border)] bg-white/90 text-[var(--color-text-main)] hover:bg-[var(--color-bg-alt)]'
+                              }`}
+                              aria-current={item === safePage ? 'page' : undefined}
+                            >
+                              {item}
+                            </button>
+                          ),
+                        )}
 
-                        <div className="border-t border-[var(--color-card-border)] pt-2.5">
-                          <span className="mobile-card-meta-item">{formatPhone(item.phone)}</span>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2 pt-1">
-                          <a
-                            href={toWhatsAppUrl(item.phone)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mobile-card-action-btn flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] bg-[#eefce8] px-3 text-xs font-semibold text-[#1b6e38]"
-                          >
-                            <MessageCircle size={15} /> Whats
-                          </a>
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(item)}
-                            className="mobile-card-action-btn flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-card-border)] bg-white px-3 text-xs font-semibold text-[var(--color-text-main)]"
-                          >
-                            <Edit3 size={15} /> Editar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteTarget(item)}
-                            className="mobile-card-action-btn flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-700"
-                          >
-                            <Trash2 size={15} /> Excluir
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                          disabled={safePage >= totalPages}
+                          className="inline-flex min-h-[38px] items-center gap-1 rounded-lg border border-[var(--color-card-border)] bg-white/90 px-2.5 text-xs font-semibold text-[var(--color-text-main)] transition hover:bg-[var(--color-bg-alt)] disabled:opacity-45"
+                          aria-label="Próxima página"
+                        >
+                          <span className="hidden sm:inline">Próxima</span>
+                          <ChevronRight size={14} />
+                        </button>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </>
               )}

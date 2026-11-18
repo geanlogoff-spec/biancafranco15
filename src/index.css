@@ -175,6 +175,32 @@ body.locked {
     inset 0 -1px 1px 0 rgba(152, 117, 196, 0.14);
 }
 
+/* Menu lateral de seções — vidro "fosco" quase opaco para leitura perfeita
+   (Brave/Chrome mobile muitas vezes desativam ou enfraquecem o backdrop-filter) */
+.section-menu-panel {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.97) 0%, rgba(248, 242, 255, 0.96) 60%, rgba(240, 230, 253, 0.97) 100%);
+  border: 1px solid rgba(201, 175, 233, 0.75);
+  box-shadow:
+    0 28px 60px -18px rgba(70, 40, 120, 0.45),
+    0 8px 20px -10px rgba(70, 40, 120, 0.25),
+    inset 0 1.5px 1px 0 rgba(255, 255, 255, 1);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .section-menu-panel {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 242, 255, 0.9) 60%, rgba(240, 230, 253, 0.92) 100%);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+}
+
+/* Véu por trás do menu: escurece/desfoca levemente o conteúdo da página */
+.section-menu-scrim {
+  background: rgba(58, 36, 92, 0.28);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
 .ios-glass-pill {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.72) 0%, rgba(244, 236, 253, 0.52) 100%);
   backdrop-filter: blur(24px) saturate(190%) brightness(1.04);
@@ -227,202 +253,6 @@ body.locked {
     0 6px 18px -6px rgba(110, 79, 153, 0.28);
 }
 
-/* ============================================================
-   LOGIN INTERATIVO — 5 CAMADAS DE PROFUNDIDADE
-   ============================================================ */
-
-.login-interactive-stage {
-  --mouse-x: 50vw;
-  --mouse-y: 45vh;
-  --parallax-x: 0;
-  --parallax-y: 0;
-  position: relative;
-  min-height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  overflow: hidden;
-  color: var(--color-text-main);
-}
-
-.login-interactive-bg {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse 65% 45% at 50% 0%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 70%),
-    var(--color-bg);
-}
-
-/* Camada 1: Malha Base */
-.login-grid-base {
-  position: absolute;
-  inset: -80px;
-  background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--color-primary) 7%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--color-primary) 7%, transparent) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 90% 80% at 50% 45%, #000 30%, transparent 95%);
-  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 45%, #000 30%, transparent 95%);
-  transform: translate3d(calc(var(--parallax-x) * -28px), calc(var(--parallax-y) * -28px), 0);
-  will-change: transform;
-}
-
-/* Camada 2: Spotlight da Malha no Cursor */
-.login-grid-spotlight {
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--color-accent) 70%, transparent) 1.4px, transparent 0),
-    linear-gradient(to right, color-mix(in srgb, var(--color-accent) 30%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--color-primary) 25%, transparent) 1px, transparent 1px);
-  background-size: 48px 48px;
-  background-position: calc(var(--parallax-x) * -28px) calc(var(--parallax-y) * -28px);
-  mask-image: radial-gradient(360px circle at var(--mouse-x) var(--mouse-y), #000 0%, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
-  -webkit-mask-image: radial-gradient(360px circle at var(--mouse-x) var(--mouse-y), #000 0%, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
-  will-change: mask-image, background-position;
-}
-
-/* Camada 3: Halo Luminoso do Cursor */
-.login-cursor-halo {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 560px;
-  height: 560px;
-  border-radius: 50%;
-  background: radial-gradient(circle,
-      color-mix(in srgb, var(--color-accent) 22%, transparent) 0%,
-      color-mix(in srgb, var(--color-primary) 12%, transparent) 42%,
-      transparent 72%);
-  filter: blur(18px);
-  transform: translate3d(calc(var(--mouse-x) - 280px), calc(var(--mouse-y) - 280px), 0);
-  will-change: transform;
-}
-
-/* Camada 4: Orbes em Paralaxe */
-.login-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(54px);
-  will-change: transform;
-}
-
-.login-orb-1 {
-  width: 460px;
-  height: 460px;
-  top: 6%;
-  left: 12%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 26%, transparent) 0%, transparent 75%);
-  transform: translate3d(calc(var(--parallax-x) * 76px), calc(var(--parallax-y) * 64px), 0);
-}
-
-.login-orb-2 {
-  width: 520px;
-  height: 520px;
-  bottom: 4%;
-  right: 10%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 22%, transparent) 0%, transparent 75%);
-  transform: translate3d(calc(var(--parallax-x) * -86px), calc(var(--parallax-y) * -72px), 0);
-}
-
-.login-orb-3 {
-  width: 380px;
-  height: 380px;
-  top: 14%;
-  right: 18%;
-  background: radial-gradient(circle, rgba(216, 197, 162, 0.25) 0%, transparent 75%);
-  transform: translate3d(calc(var(--parallax-x) * -52px), calc(var(--parallax-y) * 58px), 0);
-}
-
-/* Camada 5: Anéis Orbitais */
-.login-orbital-rings {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 680px;
-  height: 680px;
-  transform: translate3d(calc(-50% + var(--parallax-x) * -38px), calc(-50% + var(--parallax-y) * -38px), 0);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.login-ring {
-  position: relative;
-}
-
-.login-ring-outer {
-  position: absolute;
-  width: 660px;
-  height: 660px;
-  border-radius: 50%;
-  border: 1px dashed color-mix(in srgb, var(--color-accent) 35%, transparent);
-  animation: login-orbit-cw 64s linear infinite;
-}
-
-.login-ring-inner {
-  position: absolute;
-  width: 530px;
-  height: 530px;
-  border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 16%, transparent);
-  transform: translate3d(calc(var(--parallax-x) * 18px), calc(var(--parallax-y) * 18px), 0);
-  animation: login-orbit-ccw 48s linear infinite;
-}
-
-.login-ring-node {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-gold);
-  box-shadow: 0 0 12px 2px rgba(216, 197, 162, 0.75);
-}
-
-.login-ring-node.node-top {
-  top: -4px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.login-ring-node.node-bottom {
-  bottom: -4px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--color-accent);
-  box-shadow: 0 0 12px 2px color-mix(in srgb, var(--color-accent) 60%, transparent);
-}
-
-.login-ring-node.node-right {
-  right: -4px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-@keyframes login-orbit-cw {
-  from {
-    rotate: 0deg;
-  }
-
-  to {
-    rotate: 360deg;
-  }
-}
-
-@keyframes login-orbit-ccw {
-  from {
-    rotate: 360deg;
-  }
-
-  to {
-    rotate: 0deg;
-  }
-}
-
 .admin-login-fullscreen {
   position: relative;
   z-index: 10;
@@ -448,8 +278,6 @@ body.locked {
     inset 0 -1px 1px 0 rgba(152, 117, 196, 0.16);
   backdrop-filter: blur(28px) saturate(190%) brightness(1.03);
   -webkit-backdrop-filter: blur(28px) saturate(190%) brightness(1.03);
-  transform: translate3d(calc(var(--parallax-x, 0) * 6px), calc(var(--parallax-y, 0) * 6px), 0);
-  will-change: transform;
 }
 
 /* ============================================================
@@ -458,28 +286,11 @@ body.locked {
 
 .admin-page-shell {
   position: relative;
+  isolation: isolate;
   min-height: 100dvh;
-  background:
-    radial-gradient(ellipse 52% 42% at 10% 10%, rgba(201, 175, 233, 0.52), transparent 68%),
-    radial-gradient(ellipse 48% 40% at 90% 14%, rgba(216, 197, 162, 0.36), transparent 65%),
-    radial-gradient(ellipse 55% 46% at 82% 62%, rgba(152, 117, 196, 0.3), transparent 70%),
-    radial-gradient(ellipse 52% 45% at 18% 82%, rgba(220, 198, 250, 0.58), transparent 70%),
-    linear-gradient(180deg, #f9f5ff 0%, #f1e8fc 55%, #f7f2fe 100%);
+  /* Mesmo fundo aquarelado da tela de login (o jardim encantado fica fixo por trás) */
+  background: linear-gradient(180deg, #f3ecfd 0%, #e7d8fa 100%);
   color: var(--color-text-main);
-}
-
-.admin-page-shell::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--color-primary) 5%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--color-primary) 5%, transparent) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 85% 75% at 50% 20%, #000 35%, transparent 95%);
-  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 20%, #000 35%, transparent 95%);
 }
 
 /* 6.1 Top Navbar Sticky (iOS Glass Bar) */
@@ -490,13 +301,24 @@ body.locked {
   padding: 0.75rem 1.25rem 0;
 }
 
+/* Faixa sólida por trás da barra: impede que o conteúdo rolado apareça acima/ao redor dela */
+.admin-navbar-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 -0.75rem 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg, #efe6fc 0%, rgba(239, 230, 252, 0.92) 70%, rgba(239, 230, 252, 0) 100%);
+}
+
 .admin-navbar {
   max-width: 1280px;
   margin: 0 auto;
   padding: 0.78rem 1.5rem;
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.68) 0%, rgba(246, 238, 254, 0.52) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.78);
+  /* Vidro fosco quase opaco: legível mesmo quando o navegador mobile desativa o blur */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.97) 0%, rgba(246, 238, 254, 0.96) 100%);
+  border: 1px solid rgba(201, 175, 233, 0.7);
   backdrop-filter: blur(28px) saturate(190%) brightness(1.03);
   -webkit-backdrop-filter: blur(28px) saturate(190%) brightness(1.03);
   box-shadow:
@@ -514,14 +336,14 @@ body.locked {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.5rem 0.95rem;
+  padding: 0.5rem 1rem;
   border-radius: var(--radius-full);
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
-  color: var(--color-text-main);
+  border: 1px solid rgba(216, 197, 162, 0.55);
+  background: linear-gradient(135deg, #583a82 0%, #7e5ba9 100%);
+  box-shadow:
+    0 8px 18px -6px rgba(88, 58, 130, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  color: #ffffff;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -530,8 +352,9 @@ body.locked {
 }
 
 .btn-back-to-site:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: var(--color-accent);
+  background: linear-gradient(135deg, #4b3070 0%, #6e4f99 100%);
+  border-color: rgba(216, 197, 162, 0.85);
+  transform: translateY(-1px);
 }
 
 .pulse-dot {
@@ -1021,10 +844,6 @@ body.locked {
   border-color: #6e4f99;
 }
 
-.admin-select-filter:focus {
-  border-color: var(--color-accent);
-}
-
 .admin-table-container {
   overflow-x: auto;
   border-radius: 16px;
@@ -1267,8 +1086,6 @@ body.locked {
 
   .text-gold-shine,
   .btn-magic::after,
-  .login-ring-outer,
-  .login-ring-inner,
   .pulse-dot {
     animation: none;
   }

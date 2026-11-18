@@ -4,5 +4,20 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    // Permite pré-visualização no celular via túnel temporário (Cloudflare)
+    allowedHosts: ['.trycloudflare.com'],
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
 });
 

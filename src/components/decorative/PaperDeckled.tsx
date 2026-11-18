@@ -16,14 +16,13 @@ export function PaperDeckled({
 }) {
   const uid = useId().replace(/:/g, '');
   const clipId = `deckled-${uid}`;
-  const grainId = `paper-grain-${uid}`;
 
   return (
     <div
       onClick={onClick}
       className={`relative select-none ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
-      {/* Definições SVG: recorte orgânico de papel rasgado à mão + grão sutil */}
+      {/* Definições SVG: recorte orgânico de papel rasgado à mão */}
       <svg className="pointer-events-none absolute h-0 w-0 overflow-hidden" aria-hidden="true">
         <defs>
           <clipPath id={clipId} clipPathUnits="objectBoundingBox">
@@ -49,10 +48,6 @@ export function PaperDeckled({
               "
             />
           </clipPath>
-          <filter id={grainId}>
-            <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
-            <feColorMatrix type="saturate" values="0" />
-          </filter>
         </defs>
       </svg>
 
@@ -74,14 +69,6 @@ export function PaperDeckled({
           }}
           className="relative px-5 py-7 sm:px-7 sm:py-9"
         >
-          {/* Textura suave de fibra de papel algodão */}
-          <svg
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.03] mix-blend-multiply"
-          >
-            <rect width="100%" height="100%" filter={`url(#${grainId})`} />
-          </svg>
-
           {/* Reflexo especular estilo iOS Liquid Glass nas bordas do recorte */}
           <div
             aria-hidden="true"

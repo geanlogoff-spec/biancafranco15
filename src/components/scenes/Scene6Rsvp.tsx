@@ -2,24 +2,16 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Heart, Loader2, MessageCircle, X } from 'lucide-react';
 import { useState } from 'react';
 import { invitation } from '../../config/invitation.config';
-import { submitRsvp, supabase, validateRsvp, type RsvpInput } from '../../lib/supabase';
+import { formatPhone, submitRsvp, supabase, validateRsvp, type RsvpInput } from '../../lib/supabase';
 import { FlowerCluster } from '../decorative/BloomingRose';
 import { Flourish, OrnateFrame } from '../decorative/OrnateFrame';
 import { Sparkles } from '../decorative/Sparkles';
 import { Reveal, Scene, SectionTitle } from '../Scene';
 
-function maskPhone(digits: string) {
-  const d = digits.slice(0, 11);
-  if (d.length <= 2) return d.length ? `(${d}` : '';
-  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-}
-
 function whatsappLink(data: RsvpInput) {
   const first = invitation.debutante.name.split(' ')[0];
   const msg = data.attending
-    ? `Olá! Confirmo minha presença nos 15 anos de ${first} ✨\n\nNome: ${data.name.trim()}\nWhatsApp: ${maskPhone(data.phone)}`
+    ? `Olá! Confirmo minha presença nos 15 anos de ${first} ✨\n\nNome: ${data.name.trim()}\nWhatsApp: ${formatPhone(data.phone)}`
     : `Olá! Infelizmente não poderei comparecer aos 15 anos de ${first}. Desejo uma noite linda! 💜\n\nNome: ${data.name.trim()}`;
   return `https://wa.me/${invitation.rsvp.whatsappNumber}?text=${encodeURIComponent(msg)}`;
 }
@@ -152,7 +144,7 @@ export function Scene6Rsvp() {
                       inputMode="numeric"
                       autoComplete="tel-national"
                       placeholder="(68) 99999-9999"
-                      value={maskPhone(form.phone)}
+                      value={formatPhone(form.phone)}
                       onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '').slice(0, 11) })}
                       aria-invalid={!!errors.phone}
                     />

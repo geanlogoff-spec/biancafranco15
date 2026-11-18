@@ -106,12 +106,29 @@ export async function getAdminSession(): Promise<boolean> {
 
 export async function fetchRsvps(): Promise<RsvpRecord[]> {
   if (!supabase) throw new Error('Banco de dados não configurado.');
-  const { data, error } = await supabase
-    .from(invitation.rsvp.supabaseTable)
-    .select('id, name, phone, attending, companions, created_at')
-    .order('created_at', { ascending: false });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as RsvpRecord[];
+
+  const pageSize = 1000;
+  const all: RsvpRecord[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from(invitation.rsvp.supabaseTable)
+      .select('id, name, phone, attending, companions, created_at')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, from + pageSize - 1);
+
+    if (error) throw new Error(error.message);
+
+    const rows = (data ?? []) as RsvpRecord[];
+    all.push(...rows);
+
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return all;
 }
 
 export async function fetchRsvpsWithLatency(): Promise<{ records: RsvpRecord[]; latencyMs: number }> {

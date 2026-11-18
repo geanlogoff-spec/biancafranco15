@@ -1,5 +1,5 @@
-import { motion, useReducedMotion } from 'framer-motion';
-import { useMemo, useState } from 'react';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
+import { useMemo, useRef, useState } from 'react';
 
 const PALETTE = [
   ['#c9afe9', '#9875c4'],
@@ -17,6 +17,7 @@ interface Props {
   /** Amplitude da trajetória em px */
   range?: number;
   seed?: number;
+  paused?: boolean;
 }
 
 function rand(seed: number) {
@@ -24,8 +25,9 @@ function rand(seed: number) {
   return s - Math.floor(s);
 }
 
-export function Butterfly({ x, y, size = 38, variant = 0, range = 120, seed = 1 }: Props) {
+export function Butterfly({ x, y, size = 38, variant = 0, range = 120, seed = 1, paused = false }: Props) {
   const reduce = useReducedMotion();
+  const off = reduce || paused;
   const [flee, setFlee] = useState(0);
   const [c1, c2] = PALETTE[variant % PALETTE.length];
 
@@ -48,7 +50,7 @@ export function Butterfly({ x, y, size = 38, variant = 0, range = 120, seed = 1 
       className="absolute cursor-pointer select-none"
       style={{ left: `${x}%`, top: `${y}%`, width: size, height: size, zIndex: 5 }}
       animate={
-        reduce
+        off
           ? { opacity: 0.9 }
           : {
               x: path.map((p) => p.x + flee * 60),
@@ -56,7 +58,7 @@ export function Butterfly({ x, y, size = 38, variant = 0, range = 120, seed = 1 
               rotate: path.map((p) => p.r),
             }
       }
-      transition={{ duration, repeat: Infinity, ease: 'easeInOut' }}
+      transition={off ? { duration: 0.2 } : { duration, repeat: Infinity, ease: 'easeInOut' }}
       onPointerDown={() => setFlee((f) => (f >= 2 ? 0 : f + 1))}
       onHoverStart={() => setFlee((f) => (f >= 2 ? 0 : f + 1))}
       aria-hidden
@@ -72,8 +74,8 @@ export function Butterfly({ x, y, size = 38, variant = 0, range = 120, seed = 1 
         {/* Asa esquerda */}
         <motion.g
           style={{ originX: '32px', originY: '32px' }}
-          animate={reduce ? undefined : { scaleX: [1, 0.25, 1] }}
-          transition={{ duration: flap, repeat: Infinity, ease: 'easeInOut' }}
+          animate={off ? undefined : { scaleX: [1, 0.25, 1] }}
+          transition={off ? undefined : { duration: flap, repeat: Infinity, ease: 'easeInOut' }}
         >
           <path d="M32 30 C 18 6, 2 10, 6 26 C 8 34, 20 34, 32 32 Z" fill={`url(#bw-${seed})`} stroke="#d8c5a2" strokeWidth="0.8" />
           <path d="M32 33 C 20 36, 8 44, 14 52 C 20 58, 28 46, 32 36 Z" fill={`url(#bw-${seed})`} stroke="#d8c5a2" strokeWidth="0.8" opacity="0.9" />
@@ -82,8 +84,8 @@ export function Butterfly({ x, y, size = 38, variant = 0, range = 120, seed = 1 
         {/* Asa direita */}
         <motion.g
           style={{ originX: '32px', originY: '32px' }}
-          animate={reduce ? undefined : { scaleX: [1, 0.25, 1] }}
-          transition={{ duration: flap, repeat: Infinity, ease: 'easeInOut' }}
+          animate={off ? undefined : { scaleX: [1, 0.25, 1] }}
+          transition={off ? undefined : { duration: flap, repeat: Infinity, ease: 'easeInOut' }}
         >
           <path d="M32 30 C 46 6, 62 10, 58 26 C 56 34, 44 34, 32 32 Z" fill={`url(#bw-${seed})`} stroke="#d8c5a2" strokeWidth="0.8" />
           <path d="M32 33 C 44 36, 56 44, 50 52 C 44 58, 36 46, 32 36 Z" fill={`url(#bw-${seed})`} stroke="#d8c5a2" strokeWidth="0.8" opacity="0.9" />
@@ -96,8 +98,11 @@ export function Butterfly({ x, y, size = 38, variant = 0, range = 120, seed = 1 
   );
 }
 
-/** Grupo de borboletas posicionadas pela seção */
+/** Grupo de borboletas posicionadas pela seção (pausa fora da tela) */
 export function ButterflySwarm({ count = 4, seedBase = 1 }: { count?: number; seedBase?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { margin: '120px 0px' });
+
   const items = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => ({
@@ -110,10 +115,10 @@ export function ButterflySwarm({ count = 4, seedBase = 1 }: { count?: number; se
     [count, seedBase],
   );
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div ref={ref} className="pointer-events-none absolute inset-0 overflow-hidden">
       <div className="pointer-events-auto">
         {items.map((b) => (
-          <Butterfly key={b.seed} {...b} />
+          <Butterfly key={b.seed} {...b} paused={!inView} />
         ))}
       </div>
     </div>

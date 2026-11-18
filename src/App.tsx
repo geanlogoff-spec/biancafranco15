@@ -1,8 +1,6 @@
 import { MotionConfig } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-import { AdminLogin } from './components/admin/AdminLogin';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { FloatingControls } from './components/FloatingControls';
 import { JourneyGuide } from './components/JourneyGuide';
 import { Scene1Portal } from './components/scenes/Scene1Portal';
@@ -15,6 +13,20 @@ import { Scene7Closing } from './components/scenes/Scene7Closing';
 import { SceneGiftHints } from './components/scenes/SceneGiftHints';
 import { invitation } from './config/invitation.config';
 import { getAdminSessionInfo } from './lib/supabase';
+
+const AdminDashboard = lazy(() =>
+  import('./components/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })),
+);
+const AdminLogin = lazy(() =>
+  import('./components/admin/AdminLogin').then((m) => ({ default: m.AdminLogin })),
+);
+
+const adminLoadingScreen = (
+  <div className="admin-page-shell flex min-h-[100dvh] flex-col items-center justify-center text-[var(--color-text-muted)]">
+    <Loader2 className="mb-3 animate-spin" size={28} />
+    <p className="font-mono text-xs uppercase tracking-[0.1em]">Verificando sessão...</p>
+  </div>
+);
 
 function isAdminLocation(): boolean {
   if (typeof window === 'undefined') return false;
@@ -103,21 +115,22 @@ export default function App() {
     return (
       <MotionConfig reducedMotion="user">
         {authStatus === 'checking' ? (
-          <div className="admin-page-shell flex min-h-[100dvh] flex-col items-center justify-center text-[var(--color-text-muted)]">
-            <Loader2 className="mb-3 animate-spin" size={28} />
-            <p className="font-mono text-xs uppercase tracking-[0.1em]">Verificando sessão...</p>
-          </div>
-        ) : authStatus === 'admin' ? (
-          <AdminDashboard
-            adminEmail={adminEmail}
-            onSignedOut={() => {
-              setAdminEmail('');
-              setAuthStatus('guest');
-            }}
-            onGoToInvite={goToInvite}
-          />
+          adminLoadingScreen
         ) : (
-          <AdminLogin onSuccess={refreshSession} onBack={goToInvite} />
+          <Suspense fallback={adminLoadingScreen}>
+            {authStatus === 'admin' ? (
+              <AdminDashboard
+                adminEmail={adminEmail}
+                onSignedOut={() => {
+                  setAdminEmail('');
+                  setAuthStatus('guest');
+                }}
+                onGoToInvite={goToInvite}
+              />
+            ) : (
+              <AdminLogin onSuccess={refreshSession} onBack={goToInvite} />
+            )}
+          </Suspense>
         )}
       </MotionConfig>
     );

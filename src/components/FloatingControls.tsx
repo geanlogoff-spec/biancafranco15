@@ -80,6 +80,22 @@ export function FloatingControls({ playing, onToggleMusic }: Props) {
       className="fixed bottom-5 right-4 z-40 flex items-end gap-3"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
+      {/* Véu por trás do menu: isola o texto da página e fecha ao tocar fora */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.button
+            type="button"
+            aria-label="Fechar menu das seções"
+            className="section-menu-scrim fixed inset-0 -z-10 cursor-default"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setMenuOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Submenu lateral das seções */}
       <AnimatePresence>
         {menuOpen && (
@@ -89,7 +105,7 @@ export function FloatingControls({ playing, onToggleMusic }: Props) {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 16, scale: 0.94 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="glass-card w-56 rounded-2xl p-2.5 shadow-2xl"
+            className="section-menu-panel w-56 rounded-2xl p-2.5"
           >
             <p className="mb-1.5 border-b border-gold/40 px-2.5 pb-1.5 font-sans text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-plum">
               Ir para seção
@@ -105,7 +121,7 @@ export function FloatingControls({ playing, onToggleMusic }: Props) {
                       className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left font-sans text-xs font-medium transition ${
                         isActive
                           ? 'bg-gradient-to-r from-plum to-[#b393de] text-white shadow-sm'
-                          : 'text-plum-deep hover:bg-lavender/70'
+                          : 'text-plum-deep hover:bg-lavender'
                       }`}
                     >
                       <Icon size={14} className="shrink-0" />
